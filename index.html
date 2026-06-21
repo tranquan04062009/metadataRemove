@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Metadata Remover - Clean Your Images</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151d30;
+            --border-color: #24324f;
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--bg-card);
+            width: 100%;
+            max-width: 540px;
+            padding: 40px 30px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            padding: 40px 20px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background-color: rgba(21, 29, 48, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.04);
+        }
+
+        .icon-cloud {
+            width: 48px;
+            height: 48px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .drop-zone-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .drop-zone-subtext {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .status-container {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 0.4s ease;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .status-text.success {
+            color: var(--success);
+        }
+
+        .btn {
+            display: none;
+            width: 100%;
+            background-color: var(--primary);
+            color: var(--bg-main);
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Xoá Metadata Ảnh AI</h1>
+        <p>Loại bỏ hoàn toàn các tag ẩn từ ChatGPT, Midjourney, Gemini<br>Tránh quét thuật toán để không bị bóp tương tác video</p>
+    </div>
+    
+    <div class="drop-zone" id="dropZone">
+        <div class="icon-cloud">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </div>
+        <div class="drop-zone-text" id="uploadText">Kéo thả ảnh vào đây hoặc click để chọn</div>
+        <div class="drop-zone-subtext">Hỗ trợ JPG, PNG, WEBP</div>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="status-container" id="statusContainer">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="status-text" id="statusText">Đang xử lý dữ liệu...</div>
+    </div>
+
+    <button id="downloadBtn" class="btn">Tải ảnh sạch về máy</button>
+</div>
+
+<script>
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const statusContainer = document.getElementById("statusContainer");
+    const progressFill = document.getElementById("progressFill");
+    const statusText = document.getElementById("statusText");
+    const uploadText = document.getElementById("uploadText");
+    
+    let cleanedBlobUrl = null;
+    let originalFileName = "";
+
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("drag-over");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+        if (e.dataTransfer.files.length > 0) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        if (!file || !file.type.startsWith("image/")) {
+            alert("Vui lòng chọn một file ảnh hợp lệ.");
+            return;
+        }
+
+        originalFileName = file.name;
+        uploadText.innerText = `Đã nhận: ${originalFileName}`;
+        
+        statusContainer.style.display = "block";
+        downloadBtn.style.display = "none";
+        progressFill.style.width = "30%";
+        statusText.innerText = "Đang quét và loại bỏ metadata ẩn...";
+        statusText.classList.remove("success");
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            progressFill.style.width = "60%";
+            const img = new Image();
+            
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                
+                let mimeType = file.type;
+                if (mimeType !== "image/jpeg" && mimeType !== "image/png" && mimeType !== "image/webp") {
+                    mimeType = "image/jpeg";
+                }
+
+                canvas.toBlob(function(blob) {
+                    if (cleanedBlobUrl) {
+                        URL.revokeObjectURL(cleanedBlobUrl);
+                    }
+                    cleanedBlobUrl = URL.createObjectURL(blob);
+                    
+                    progressFill.style.width = "100%";
+                    statusText.innerText = "Xử lý hoàn tất! Toàn bộ cấu trúc metadata cũ đã bị huỷ.";
+                    statusText.classList.add("success");
+                    downloadBtn.style.style.display = "block";
+                }, mimeType, 0.95);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    downloadBtn.addEventListener("click", function() {
+        if (!cleanedBlobUrl) return;
+        const a = document.createElement("a");
+        a.href = cleanedBlobUrl;
+        
+        const parts = originalFileName.split(".");
+        const ext = parts.pop();
+        const baseName = parts.join(".");
+        a.download = `${baseName}_no_meta.${ext}`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+</script>
+
+</body>
+</html>
